@@ -2,12 +2,15 @@ export default function (babel) {
   const {types: t} = babel;
 
   /**
-   * t.isFunctionExpression() || t.isArrowFunctionExpression()
+   * 判断 function 函数和箭头函数
    */
   function isAnyFunctionExpression() {
     return t.isFunctionExpression.apply(t, arguments) || t.isArrowFunctionExpression.apply(t, arguments);
   }
 
+  /**
+   * 判断节点是否是 action
+   */
   function isAction(node, actionIdentifier, mobxNamespaceIdentifier) {
     return (actionIdentifier && t.isIdentifier(node, {name: actionIdentifier})) ||
       (
@@ -23,6 +26,9 @@ export default function (babel) {
       )
   }
 
+  /**
+   * 遍历被 action 包裹的函数及箭头函数节点
+   */
   const traverseActionBody = {
     ["FunctionExpression|ArrowFunctionExpression"](path) {
       const actionIdentifier = this.actionIdentifier;
@@ -35,20 +41,24 @@ export default function (babel) {
       }
       path.replaceWith(t.CallExpression(
         this.actionIdentifier
-          ? t.Identifier(this.actionIdentifier)
-          : t.MemberExpression(t.Identifier(this.mobxNamespaceIdentifier), t.Identifier("action"))
+        ? t.Identifier(this.actionIdentifier)
+        : t.MemberExpression(t.Identifier(this.mobxNamespaceIdentifier), t.Identifier("action"))
         ,
         [path.node]
-      ));
-    }
+        ));
+      }
   };
 
+  /**
+   * 遍历兄弟节点
+   */
   const traverseSibling = {
-    CallExpression(path) {
+    CallExpression(path) { // 查询函数内部的方法节点
       const node = path.node;
       const actionIdentifier = this.actionIdentifier;
       const mobxNamespaceIdentifier = this.mobxNamespaceIdentifier;
-      if (isAction(node.callee, actionIdentifier, mobxNamespaceIdentifier)) {
+      console.log(node.callee)
+      if (isAction(node.callee, actionIdentifier, mobxNamespaceIdentifier)) { // 调用isAction 判断是否是 action 节点
         if (node.arguments.length === 1) {
           path.get('arguments.0').traverse(traverseActionBody, {actionIdentifier, mobxNamespaceIdentifier})
           path.skip();
@@ -59,6 +69,7 @@ export default function (babel) {
       }
     },
 
+    // 遍历类节点
     ["ClassMethod|ClassProperty"](path) {
       const actionIdentifier = this.actionIdentifier;
       const mobxNamespaceIdentifier = this.mobxNamespaceIdentifier;
@@ -129,14 +140,13 @@ export default function (babel) {
         const mobxPackage = state.opts && state.opts["mobx-package"] || "mobx"
         path.traverse({
           ImportDeclaration(path) {
-            if (path.node.source.value === mobxPackage) {
+            if (path.node.source.value === mobxPackage) { // 判断是否引入了 mobx 包
+              // 循环遍历，确认导入了什么模块
               for (const specifier of path.node.specifiers) {
-                if (t.isImportNamespaceSpecifier(specifier) || (specifier.imported.name === "action")) {
-                  if (t.isImportNamespaceSpecifier(specifier)) {
-                    mobxNamespaceIdentifier = specifier.local.name;
-                  } else if (specifier.imported.name === "action") {
-                    actionIdentifier = specifier.local.name;
-                  }
+                if (t.isImportNamespaceSpecifier(specifier)) {
+                  mobxNamespaceIdentifier = specifier.local.name; // 确认是导入了 mobx 包还是 mobx-package
+                } else if (specifier.imported.name === "action") {
+                  actionIdentifier = specifier.local.name;
                 }
               }
             }
@@ -156,7 +166,7 @@ export default function (babel) {
          * Lookup for typescript decorators, and handle them separately
          */
         path.traverse({
-          CallExpression(path) {
+          CallExpression(path) { // 查询函数内部的方法节点
             const node = path.node
             if (
               t.isMemberExpression(node.callee) &&
