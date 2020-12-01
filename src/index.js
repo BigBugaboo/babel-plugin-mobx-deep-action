@@ -1,6 +1,10 @@
 export default function (babel) {
   const {types: t} = babel;
 
+  function isProgram(path) {
+    return path.isProgram();
+}
+
   /**
    * 判断 function 函数和箭头函数
    */
@@ -13,6 +17,7 @@ export default function (babel) {
    */
   function isAction(node, actionIdentifier, mobxNamespaceIdentifier) {
     return (actionIdentifier && t.isIdentifier(node, {name: actionIdentifier})) ||
+      t.isIdentifier(node, {name: 'runInAction'}) ||
       (
         t.isMemberExpression(node) &&
         t.isIdentifier(node.object, {name: 'action'}) &&
@@ -57,7 +62,6 @@ export default function (babel) {
       const node = path.node;
       const actionIdentifier = this.actionIdentifier;
       const mobxNamespaceIdentifier = this.mobxNamespaceIdentifier;
-      console.log(node.callee)
       if (isAction(node.callee, actionIdentifier, mobxNamespaceIdentifier)) { // 调用isAction 判断是否是 action 节点
         if (node.arguments.length === 1) {
           path.get('arguments.0').traverse(traverseActionBody, {actionIdentifier, mobxNamespaceIdentifier})
@@ -69,13 +73,33 @@ export default function (babel) {
       }
     },
 
-    // 遍历类节点
+    // 遍历类的方法及属性
     ["ClassMethod|ClassProperty"](path) {
       const actionIdentifier = this.actionIdentifier;
       const mobxNamespaceIdentifier = this.mobxNamespaceIdentifier;
       const explicitClasses = this.classes;
       const classDeclaration = path.findParent(p => p.isClassDeclaration())
-      // If there is an explicit classes with actions, handle them separately
+
+      // 判断 constructor 是否使用了 makeAutoObservable
+      if (path.node.key.name === "constructor") {
+        for(const node of path.container) {
+          if (node.kind === "constructor") {
+            for(const item of node.body.body) {
+              this.hasUseMakeAutoObservable = t.isIdentifier(item.expression.callee, { name: 'makeAutoObservable' })
+            }
+          }
+        }
+      }
+      // 如果使用了 makeAutoObservable 并且是类的方法
+      if (this.hasUseMakeAutoObservable && t.isClassMethod(path.node, { kind: 'method'})) {
+        if (t.isClassMethod(path.node)) {
+          path.get('body').traverse(traverseActionBody, {actionIdentifier, mobxNamespaceIdentifier})
+          path.skip();
+        }
+      } else if (this.hasUseMakeAutoObservable && (t.isFunctionExpression(path.node.value) || t.isArrowFunctionExpression(path.node.value))) {
+        path.get('value').traverse(traverseActionBody, {actionIdentifier, mobxNamespaceIdentifier})
+      }
+
       if (
         explicitClasses &&
         t.isIdentifier(classDeclaration.node.id) &&
@@ -136,18 +160,35 @@ export default function (babel) {
       Program(path, state) {
         let actionIdentifier;
         let mobxNamespaceIdentifier;
+        let hasUseMakeAutoObservable = false; // 判断是否使用了 MakeAutoObservable
         let tslibNamespaceIdentifier;
         const mobxPackage = state.opts && state.opts["mobx-package"] || "mobx"
         path.traverse({
           ImportDeclaration(path) {
-            if (path.node.source.value === mobxPackage) { // 判断是否引入了 mobx 包
+            if (path.node.source.value === mobxPackage) { // 判断是否导入了 mobx 包
+              let hasImportAction = false
+              let hasImportMakeAutoObservable = false
               // 循环遍历，确认导入了什么模块
               for (const specifier of path.node.specifiers) {
                 if (t.isImportNamespaceSpecifier(specifier)) {
                   mobxNamespaceIdentifier = specifier.local.name; // 确认是导入了 mobx 包还是 mobx-package
                 } else if (specifier.imported.name === "action") {
                   actionIdentifier = specifier.local.name;
+                  hasImportAction = true
+                } else if (specifier.imported.name === "makeAutoObservable") {
+                  hasImportMakeAutoObservable = true
                 }
+              }
+
+              // 导入了 makeAutoObservable 但是没有导入 action，自动把 action 加进去
+              if (hasImportMakeAutoObservable && !hasImportAction) {
+                const specifiers = [t.importSpecifier(t.identifier('action'), t.identifier('action'))]
+                const importDeclaration = t.importDeclaration(
+                    specifiers,
+                    t.stringLiteral("mobx")
+                );
+                let program = path.findParent(isProgram);
+                program.unshiftContainer("body", importDeclaration);
               }
             }
             if (path.node.source.value === "tslib") {
@@ -159,7 +200,7 @@ export default function (babel) {
             }
           }
         })
-        const context = {actionIdentifier, mobxNamespaceIdentifier}
+        const context = {actionIdentifier, mobxNamespaceIdentifier, hasUseMakeAutoObservable}
         path.traverse(traverseSibling, context)
         const toTraverse = [];
         /**
