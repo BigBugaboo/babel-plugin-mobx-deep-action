@@ -1,51 +1,50 @@
-import * as mobx from "mobx";
+import { makeAutoObservable, runInAction } from "mobx";
 
 function a1() {}
 
-mobx.action(function doSome() {
+action(function doSome() {
   setTimeout(function () {});
 });
 
-mobx.action("named", function doSome() {
+action("named", function doSome() {
   setTimeout(function () {});
 });
 
-mobx.action("named", function doSome() {
-  setTimeout(mobx.action(function () {}));
+action("named", function doSome() {
+  setTimeout(action(function () {}));
 });
 
 class SomeClass {
-  @mobx.action
+  constructor() {
+    makeAutoObservable(this);
+  }
+
   m1() {
     setTimeout(function () {});
     setTimeout(() => {});
   }
 
-  @mobx.action("name")
   m2() {
-    setTimeout(function () {});
+    setTimeout(runInAction(function () {}));
     setTimeout(() => {});
   }
 
-  @mobx.action("named")
   m3 = function () {
     setTimeout(function () {});
     setTimeout(() => {});
   };
 
-  m4 = mobx.action(function () {
+  m4 = function () {
     setTimeout(function () {});
     setTimeout(() => {});
-  });
+  };
 
-  @mobx.action
   m5 = () => {};
 
-  m6 = mobx.action(() => {
+  m6 = () => {
     setTimeout(function () {});
     setTimeout(() => {});
-  });
+  };
 
-  @mobx.action
   m7 = blabla;
 }
