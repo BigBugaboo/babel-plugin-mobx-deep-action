@@ -18,7 +18,8 @@
     "mocha": "^2.2.5",
   },
   "scripts": {
-    "deploy": "npm publish -access public",
+    "deploy:hotfix": "npm version patch && npm publish -access public",
+    "deploy:feature": "npm version minor && npm publish -access public",
     "clean": "rm -rf lib",
     "build": "babel src -d lib",
     "test": "mocha --compilers js:babel-register",
