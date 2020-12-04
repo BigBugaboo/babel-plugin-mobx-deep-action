@@ -1,8 +1,5 @@
 # babel-plugin-mobx-deep-action
 
-## Translations
-- [简体中文](https://github.com/BigBugaboo/babel-plugin-mobx-deep-action/tanslations/zh-Hans/README.md)
-
 假设，把动作内部创建的所有代码视为动作来处理，不用在单独使用 action 标记异步函数。
 
 插件会扫描全部函数，标记 action，然后使用相应的 action 包裹其内部函数。
