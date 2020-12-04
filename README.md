@@ -46,8 +46,10 @@ action(function doSome() {
 ```
 
 ## Caveats
-
-Plugin support only ES6 imports. Only these imports are supported:
+Plugin support only ES6 imports.
+If you use makeAutoObserver for class of store,that I had done what imported.
+if you not use makeAutoObserver,please import `action` from mobx.
+Only these imports are supported:
 ```
 import {action} from "mobx";
 ```
