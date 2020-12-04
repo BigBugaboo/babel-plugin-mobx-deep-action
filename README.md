@@ -3,6 +3,9 @@
 [![Build Status](https://travis-ci.org/mobxjs/babel-plugin-mobx-deep-action.svg?branch=master)](https://travis-ci.org/mobxjs/babel-plugin-mobx-deep-action)
 [![npm version](https://badge.fury.io/js/babel-plugin-mobx-deep-action.svg)](https://badge.fury.io/js/babel-plugin-mobx-deep-action)
 
+## Translations
+- [简体中文](https://github.com/BigBugaboo/babel-plugin-mobx-deep-action/tanslations/zh-Hans/README.md)
+
 Allow to reduce boilerplate of writing async actions.
 Based on assumption, that all code created inside an action,
 should be handled as action too.
