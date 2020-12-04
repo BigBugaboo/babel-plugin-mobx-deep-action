@@ -7,9 +7,9 @@
 
 插件会扫描全部函数，标记 action，然后使用相应的 action 包裹其内部函数。
 
-* [Usage with async and generator functions](#toc-usage-async)
-* [Typescript decorators](#toc-typescript-decorators)
-* [Use other package](#toc-mobx-package)
+* [使用 async and generator 函数](#toc-usage-async)
+* [Typescript 装饰模式](#toc-typescript-decorators)
+* [使用其他包](#toc-mobx-package)
 
 ## 例子
 
@@ -45,7 +45,7 @@ action(function doSome() {
 
 **如果使用了 makeAutoObserver 可以不用导入 action，我已处理。**
 
-导入方式，如下:
+只支持以下导入方式，如下:
 ```
 import {action} from "mobx";
 ```
@@ -108,7 +108,7 @@ require("babel-core").transform("code", {
 ```
 
 
-## <a id="toc-usage-async"></a> 如果使用 async and generator 函数.
+## <a id="toc-usage-async"></a> 使用 async and generator 函数.
 
 请看 https://github.com/Strate/babel-plugin-mobx-async-action
 
