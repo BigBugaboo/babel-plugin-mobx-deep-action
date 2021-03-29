@@ -99,7 +99,7 @@ $ babel --plugins @BigBugaboo/babel-plugin-mobx-deep-action script.js
 ### 通过 babel node api 编译
 
 ```javascript
-require("babel-core").transform("code", {
+require("@babel/core").transform("code", {
   plugins: ["@BigBugaboo/babel-plugin-mobx-deep-action"]
 });
 ```
