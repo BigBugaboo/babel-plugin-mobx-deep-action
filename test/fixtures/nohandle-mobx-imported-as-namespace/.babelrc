@@ -1,6 +1,6 @@
 {
   "parserOpts":{
-    "plugins":["decorators", "classProperties"]
+    "plugins":["classProperties"]
   },
   "plugins": [
     [

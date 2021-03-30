@@ -6,11 +6,9 @@ function a1() {}
 action(function doSome() {
   setTimeout(action(function () {}));
 });
-
 action("named", function doSome() {
   setTimeout(action(function () {}));
 });
-
 action("named", function doSome() {
   setTimeout(action(function () {}));
 });
@@ -34,18 +32,14 @@ class SomeClass {
     setTimeout(action(function () {}));
     setTimeout(action(() => {}));
   };
-
   m4 = function () {
     setTimeout(action(function () {}));
     setTimeout(action(() => {}));
   };
-
   m5 = () => {};
-
   m6 = () => {
     setTimeout(action(function () {}));
     setTimeout(action(() => {}));
   };
-
   m7 = blabla;
 }
